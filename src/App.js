@@ -7,12 +7,12 @@ import Completed from "./pages/Completed";
 function App() {
   return (
     <Router>
-      <nav style={{ display: "flex", gap: "20px", padding: "10px" }}>
+      {/* <nav style={{ display: "flex", gap: "20px", padding: "10px" }}>
         <Link to="/">Home</Link>
         <Link to="/ongoing">Ongoing</Link>
         <Link to="/upcoming">Upcoming</Link>
         <Link to="/completed">Completed</Link>
-      </nav>
+      </nav> */}
 
       <Routes>
         <Route path="/" element={<Home />} />

@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import ContestCard from "./ContestCard";
 
-function ContestList({ filter }) {
+function ContestList({ filter, searchTerm = "", platform = "" }) {
   const [contests, setContests] = useState([]);
-  const [loading, setLoading] = useState(true); // track loading state
+  const [filteredContests, setFilteredContests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true); // start loading
+        setLoading(true);
         const username = process.env.REACT_APP_CLIST_USERNAME;
         const apiKey = process.env.REACT_APP_CLIST_API_KEY;
 
@@ -17,32 +18,61 @@ function ContestList({ filter }) {
 
         const res = await axios.get(url);
 
-        // filter required sites
-        const filtered = res.data.objects.filter(c =>
-          ["leetcode.com", "codeforces.com", "codechef.com"].some(site =>
-            c.host.toLowerCase().includes(site)
-          )
-        );
+        // Filter required sites
+        const filtered = res.data.objects.filter(c => {
+          const platform = (c.resource?.name || c.host || "").toLowerCase();
+          return ["leetcode.com", "codeforces.com", "codechef.com"].some(site =>
+            platform.includes(site)
+          );
+        });
 
         setContests(filtered);
+        setFilteredContests(filtered);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false); // stop loading in both success & error
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [filter]);
 
+  // Apply search and platform filters client-side
+  useEffect(() => {
+    let filtered = contests;
+    
+    // Apply platform filter
+    if (platform) {
+      filtered = filtered.filter(contest => {
+        const contestPlatform = (contest.resource?.name || contest.host || "").toLowerCase();
+        return contestPlatform.includes(platform.toLowerCase());
+      });
+    }
+    
+    // Apply search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(contest => {
+        return (
+          contest.event?.toLowerCase().includes(searchLower) ||
+          contest.resource?.name?.toLowerCase().includes(searchLower) ||
+          contest.host?.toLowerCase().includes(searchLower)
+        );
+      });
+    }
+    
+    setFilteredContests(filtered);
+  }, [searchTerm, platform, contests]);
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
       {loading ? (
         <p>Loading contests...</p>
-      ) : contests.length === 0 ? (
+      ) : filteredContests.length === 0 ? (
         <p>No contests found</p>
       ) : (
-        contests.map(c => <ContestCard key={c.id} contest={c} />)
+        filteredContests.map(c => <ContestCard key={c.id} contest={c} />)
       )}
     </div>
   );
